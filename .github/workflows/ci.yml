@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  core-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: swift-actions/setup-swift@v2
+        with:
+          swift-version: "6.0"
+      - name: Test engine
+        working-directory: TrainerCore
+        run: swift test -c release -Xswiftc -enable-testing
+
+  ios-build:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Show Xcode
+        run: xcodebuild -version
+      - name: Build app (simulator, unsigned)
+        run: |
+          xcodebuild -project GTOTrainer.xcodeproj -scheme GTOTrainer \
+            -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
+            -configuration Debug CODE_SIGNING_ALLOWED=NO -quiet build
