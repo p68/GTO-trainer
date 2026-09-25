@@ -242,18 +242,22 @@ struct RangeSlider: View {
 
     var body: some View {
         GeometryReader { g in
-            let w = g.size.width - 24
+            let w = Double(g.size.width) - 24
             let x0 = 12 + w * from / 100, x1 = 12 + w * to / 100
             ZStack(alignment: .leading) {
                 Capsule().fill(Theme.surfaceHigh).frame(height: 8).padding(.horizontal, 12)
                 Capsule().fill(Theme.accent).frame(width: max(0, x1 - x0), height: 8).offset(x: x0)
                 thumb(color: Theme.betLarge).position(x: x0, y: g.size.height / 2)
-                    .gesture(DragGesture().onChanged { v in from = min(to, max(0, ((v.location.x - 12) / w * 100).rounded())) })
+                    .gesture(DragGesture().onChanged { v in from = min(to, max(0, value(v.location.x, width: w))) })
                 thumb(color: Theme.accent).position(x: x1, y: g.size.height / 2)
-                    .gesture(DragGesture().onChanged { v in to = max(from, min(100, ((v.location.x - 12) / w * 100).rounded())) })
+                    .gesture(DragGesture().onChanged { v in to = max(from, min(100, value(v.location.x, width: w))) })
             }
         }
         .frame(height: 32)
+    }
+
+    private func value(_ x: CGFloat, width: Double) -> Double {
+        ((Double(x) - 12) / width * 100).rounded()
     }
 
     private func thumb(color: Color) -> some View {
