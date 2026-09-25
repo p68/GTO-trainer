@@ -39,7 +39,7 @@ enum PostflopModel {
     /// and which part of their range continues.
     struct AggressionOutcome {
         var foldEquity: Double
-        var continuing: Range
+        var continuing: HandRange
         var add: Double
         var finalPot: Double
         var allIn: Bool
@@ -65,7 +65,7 @@ enum PostflopModel {
     /// Fold equity and continuing range for each aggressive option, given the
     /// opponent's equity (per combo) against the range that takes that option.
     static func outcomes(_ engine: HandEngine, seat: Int, oppSeat: Int, options: [ActionOption],
-                         oppRange: Range, oppEq: [[Double]?]) -> [AggressionOutcome?] {
+                         oppRange: HandRange, oppEq: [[Double]?]) -> [AggressionOutcome?] {
         let me = engine.players[seat], opp = engine.players[oppSeat]
         let pot = engine.pot
         let oppIP = !engine.isInPosition(seat)

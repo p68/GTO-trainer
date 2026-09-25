@@ -79,7 +79,7 @@ final class EquityTests: XCTestCase {
     func testKnownEquities() {
         var rng = SplitMix64(seed: 1)
         let aa = Combo(Card("Ah")!, Card("As")!)
-        var kk = Range(uniform: 0)
+        var kk = HandRange(uniform: 0)
         kk[Combo(Card("Kh")!, Card("Kd")!)] = 1
         let e = Equity.vsRange(hero: aa, board: [], range: kk, samples: 20000, rng: &rng)
         XCTAssertEqual(e, 0.82, accuracy: 0.02)
@@ -92,7 +92,7 @@ final class EquityTests: XCTestCase {
         var rng = SplitMix64(seed: 2)
         let board = ["Ah", "Kd", "7c", "2s", "3h"].map { Card($0)! }
         let hero = Combo(Card("As")!, Card("Ad")!)
-        let e = Equity.vsRange(hero: hero, board: board, range: Range(uniform: 1), samples: 0, rng: &rng)
+        let e = Equity.vsRange(hero: hero, board: board, range: HandRange(uniform: 1), samples: 0, rng: &rng)
         XCTAssertGreaterThan(e, 0.97)
     }
 }

@@ -8,7 +8,7 @@ enum Equity {
         var cumulative: [Double] = []
         var total: Double { cumulative.last ?? 0 }
 
-        init(range: Range, dead: UInt64, minWeight: Double = 1e-6) {
+        init(range: HandRange, dead: UInt64, minWeight: Double = 1e-6) {
             var acc = 0.0
             for i in 0..<Combo.count {
                 let w = range.weights[i]
@@ -46,7 +46,7 @@ enum Equity {
     }
 
     /// Equity of `hero` against a weighted `range` (1 = always wins). Exact on the river.
-    static func vsRange<G: RandomNumberGenerator>(hero: Combo, board: [Card], range: Range,
+    static func vsRange<G: RandomNumberGenerator>(hero: Combo, board: [Card], range: HandRange,
                                                   samples: Int, rng: inout G) -> Double {
         let boardMask = board.mask
         let heroMask = hero.mask
@@ -79,7 +79,7 @@ enum Equity {
 
     /// Equity of every combo in `range` (weight > `minWeight`) against `opponent`.
     /// Returns a 1326-long array; combos not in the range get -1.
-    static func comboEquities<G: RandomNumberGenerator>(range: Range, vs opponent: Range, board: [Card],
+    static func comboEquities<G: RandomNumberGenerator>(range: HandRange, vs opponent: HandRange, board: [Card],
                                                         samples: Int, rng: inout G,
                                                         minWeight: Double = 0.002) -> [Double] {
         var out = Array(repeating: -1.0, count: Combo.count)
@@ -127,7 +127,7 @@ enum Equity {
     /// Computed once (deterministic seed) and used for hand ranking.
     static let preflopVsRandom: [Double] = {
         var rng = SplitMix64(seed: 0xC0FFEE)
-        let random = Range(uniform: 1)
+        let random = HandRange(uniform: 1)
         return HandClass.all.map { hc in
             vsRange(hero: hc.combos[0], board: [], range: random, samples: 2500, rng: &rng)
         }

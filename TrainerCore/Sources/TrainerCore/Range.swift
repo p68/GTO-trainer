@@ -1,7 +1,7 @@
 import Foundation
 
 /// A weighted range over all 1326 combos (weights in 0...1).
-struct Range: Equatable {
+struct HandRange: Equatable {
     var weights: [Double]
 
     init(weights: [Double]) { self.weights = weights }
@@ -18,7 +18,7 @@ struct Range: Equatable {
     }
 
     /// Zero out combos that use any of the given cards.
-    func removing(_ dead: UInt64) -> Range {
+    func removing(_ dead: UInt64) -> HandRange {
         var r = self
         for i in 0..<Combo.count where Combo.masks[i] & dead != 0 { r.weights[i] = 0 }
         return r

@@ -48,7 +48,7 @@ final class HandEngine {
     private var raiseLevel = 0
 
     /// Each player's range as the other players see it.
-    var ranges: [Range]
+    var ranges: [HandRange]
 
     /// Postflop node solved for the player to act (valid until the next action).
     private var solveCache: (key: Int, seat: Int, solve: PostflopModel.Solve)?
@@ -62,7 +62,7 @@ final class HandEngine {
         precondition(holes.count == 6)
         players = Position.allCases.map { PlayerState(position: $0, hole: holes[$0.rawValue], stack: Stakes.startingStack) }
         self.deck = deck
-        ranges = Array(repeating: Range(uniform: 1), count: 6)
+        ranges = Array(repeating: HandRange(uniform: 1), count: 6)
         post(.sb, 0.5)
         post(.bb, 1)
         needsToAct = Set(0..<6)
