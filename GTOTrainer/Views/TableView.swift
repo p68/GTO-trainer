@@ -4,63 +4,91 @@ import SwiftUI
 struct TableView: View {
     let vm: TrainerViewModel
 
+    private struct Geometry {
+        let center: CGPoint
+        let rx: CGFloat
+        let ry: CGFloat
+        let width: CGFloat
+
+        func point(seatOffset d: Int, radiusX: CGFloat, radiusY: CGFloat, turn: Double = 0) -> CGPoint {
+            let angle: Double = Double.pi / 2 + Double(d) * Double.pi / 3 + turn
+            let x: CGFloat = center.x + rx * radiusX * CGFloat(cos(angle))
+            let y: CGFloat = center.y + ry * radiusY * CGFloat(sin(angle))
+            return CGPoint(x: x, y: y)
+        }
+    }
+
     var body: some View {
         GeometryReader { geo in
-            let w = geo.size.width, h = geo.size.height
-            let center = CGPoint(x: w / 2, y: h * 0.47)
-            let rx = w * 0.36, ry = h * 0.36
+            let g = makeGeometry(geo.size)
             ZStack {
-                // Felt
-                Ellipse()
-                    .fill(RadialGradient(colors: [Theme.feltEdge, Theme.felt], center: .center,
-                                         startRadius: 10, endRadius: max(rx, ry)))
-                    .overlay(Ellipse().stroke(Color(hex: 0x0E1F17), lineWidth: 10))
-                    .frame(width: rx * 2.05, height: ry * 2.05)
-                    .position(center)
-
-                // Board + pot
-                VStack(spacing: 8) {
-                    Text("Pot \(bb(vm.pot)) bb")
-                        .font(.caption.weight(.semibold).monospacedDigit())
-                        .padding(.horizontal, 10).padding(.vertical, 3)
-                        .background(Color.black.opacity(0.35)).clipShape(Capsule())
-                    HStack(spacing: 4) {
-                        ForEach(0..<5, id: \.self) { i in
-                            if i < vm.board.count {
-                                CardView(card: vm.board[i], width: min(40, w * 0.1))
-                                    .transition(.scale.combined(with: .opacity))
-                            } else {
-                                RoundedRectangle(cornerRadius: 5).stroke(Color.white.opacity(0.1))
-                                    .frame(width: min(40, w * 0.1), height: min(40, w * 0.1) * 1.38)
-                            }
-                        }
-                    }
-                    .animation(.easeOut(duration: 0.25), value: vm.board.count)
-                }
-                .foregroundStyle(.white)
-                .position(center)
-
+                felt(g)
+                centerInfo(g)
                 ForEach(vm.seats) { seat in
-                    let d = Double((seat.id - vm.heroSeat + 6) % 6)
-                    let angle = Double.pi / 2 + d * Double.pi / 3
-                    let seatPoint = CGPoint(x: center.x + rx * 1.08 * cos(angle), y: center.y + ry * 1.12 * sin(angle))
-                    let betPoint = CGPoint(x: center.x + rx * 0.62 * cos(angle), y: center.y + ry * 0.58 * sin(angle))
-
-                    SeatView(seat: seat, compact: !seat.isHero)
-                        .position(seatPoint)
-
-                    if seat.bet > 0 {
-                        BetChip(amount: seat.bet).position(betPoint)
-                    }
-                    if seat.position == .btn {
-                        let bp = CGPoint(x: center.x + rx * 0.82 * cos(angle + 0.3), y: center.y + ry * 0.8 * sin(angle + 0.3))
-                        Text("D").font(.caption2.weight(.heavy)).foregroundStyle(.black)
-                            .frame(width: 18, height: 18).background(Circle().fill(.white)).position(bp)
-                    }
+                    seatLayer(seat, g)
                 }
             }
         }
         .padding(.vertical, 6)
+    }
+
+    private func makeGeometry(_ size: CGSize) -> Geometry {
+        Geometry(center: CGPoint(x: size.width / 2, y: size.height * 0.47),
+                 rx: size.width * 0.36, ry: size.height * 0.36, width: size.width)
+    }
+
+    private func felt(_ g: Geometry) -> some View {
+        Ellipse()
+            .fill(RadialGradient(colors: [Theme.feltEdge, Theme.felt], center: .center,
+                                 startRadius: 10, endRadius: max(g.rx, g.ry)))
+            .overlay(Ellipse().stroke(Color(hex: 0x0E1F17), lineWidth: 10))
+            .frame(width: g.rx * 2.05, height: g.ry * 2.05)
+            .position(g.center)
+    }
+
+    private func centerInfo(_ g: Geometry) -> some View {
+        let cardWidth: CGFloat = min(40, g.width * 0.1)
+        return VStack(spacing: 8) {
+            Text("Pot \(bb(vm.pot)) bb")
+                .font(.caption.weight(.semibold).monospacedDigit())
+                .padding(.horizontal, 10).padding(.vertical, 3)
+                .background(Color.black.opacity(0.35)).clipShape(Capsule())
+            HStack(spacing: 4) {
+                ForEach(0..<5, id: \.self) { i in
+                    boardSlot(i, width: cardWidth)
+                }
+            }
+            .animation(.easeOut(duration: 0.25), value: vm.board.count)
+        }
+        .foregroundStyle(.white)
+        .position(g.center)
+    }
+
+    @ViewBuilder
+    private func boardSlot(_ i: Int, width: CGFloat) -> some View {
+        if i < vm.board.count {
+            CardView(card: vm.board[i], width: width)
+                .transition(.scale.combined(with: .opacity))
+        } else {
+            RoundedRectangle(cornerRadius: 5).stroke(Color.white.opacity(0.1))
+                .frame(width: width, height: width * 1.38)
+        }
+    }
+
+    @ViewBuilder
+    private func seatLayer(_ seat: SeatSnapshot, _ g: Geometry) -> some View {
+        let d = (seat.id - vm.heroSeat + 6) % 6
+        SeatView(seat: seat, compact: !seat.isHero)
+            .position(g.point(seatOffset: d, radiusX: 1.08, radiusY: 1.12))
+        if seat.bet > 0 {
+            BetChip(amount: seat.bet)
+                .position(g.point(seatOffset: d, radiusX: 0.62, radiusY: 0.58))
+        }
+        if seat.position == .btn {
+            Text("D").font(.caption2.weight(.heavy)).foregroundStyle(.black)
+                .frame(width: 18, height: 18).background(Circle().fill(.white))
+                .position(g.point(seatOffset: d, radiusX: 0.82, radiusY: 0.8, turn: 0.3))
+        }
     }
 }
 
